@@ -1,10 +1,17 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 
 import { Button } from '../Button/Button';
 import './header.css';
 
-export const Header = ({ user, onLogin, onLogout, onCreateAccount, title }) => (
+interface HeaderProps {
+  title: string;
+  user?: any;
+  onLogin?: () => {};
+  onLogout?: () => {};
+  onCreateAccount?: () => {}
+}
+
+export const Header: React.FC<HeaderProps> = ({ user, onLogin, onLogout, onCreateAccount, title }) => (
   <header>
     <div className="header-container">
       <div>
@@ -39,15 +46,3 @@ export const Header = ({ user, onLogin, onLogout, onCreateAccount, title }) => (
     </div>
   </header>
 );
-
-Header.propTypes = {
-  user: PropTypes.shape({}),
-  onLogin: PropTypes.func.isRequired,
-  onLogout: PropTypes.func.isRequired,
-  onCreateAccount: PropTypes.func.isRequired,
-  title: PropTypes.string.isRequired,
-};
-
-Header.defaultProps = {
-  user: null,
-};

@@ -5,9 +5,7 @@ const NotFound = () => (
   <div>
     <h1>404 - Page Not Found!</h1>
     <p>
-      <Link to="/">
-        Go Home (Currently redirects to beneficiaries)
-      </Link>
+      <Link to="/">Go Home</Link>
     </p>
   </div>
 );
