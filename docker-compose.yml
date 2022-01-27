@@ -1,0 +1,33 @@
+version: "3.8"
+
+x-common-variables: &common-variables
+  - POSTGRES_DB=postgres
+  - POSTGRES_USER=postgres
+  - POSTGRES_PASSWORD=postgres
+  - POSTGRES_HOSTNAME=db
+
+
+services:
+  python_lambda:
+    build: ./python_lambda
+    volumes:
+      - ./python_lambda:/var/task
+    depends_on:
+      - db
+    environment: *common-variables
+  db:
+    image: postgres:latest
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    environment: *common-variables
+  react:
+    build:
+      context: ./react-app/
+      dockerfile: Dockerfile
+    ports:
+      - 3001:3000
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - ./react-app:/app
+    stdin_open: true

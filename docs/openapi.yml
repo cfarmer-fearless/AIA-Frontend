@@ -1,0 +1,291 @@
+openapi: 3.0.2
+servers:
+  - url: https://tzh8hrg7of.execute-api.us-east-2.amazonaws.com/dev
+  - url: https://bhdd3n47ih.execute-api.us-east-2.amazonaws.com/prod
+info:
+  title: "Example Beneficiary ESRD Dialysis Data"
+  description: An example Swagger page for use in interacting with producer of End-Stage Renal Disease (ESRD) dialysis health data for beneficiaries
+  version: 1.0.0
+paths:
+  /authenticate:
+    post:
+      summary: Submit authentication credentials
+      requestBody:
+        description: Authentication credentials
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - "username"
+                - "password"
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+        '401':
+          description: Unauthorized request. Access token is missing or invalid
+        '500':
+          description: Internal Server Error
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "${auth_lambda_invoke_arn}"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+        default:
+          statusCode: "200"
+          responseParameters:
+            method.response.header.Access-Control-Allow-Headers: '''Content-Type,X-Amz-Date,Authorization,X-Api-Key'''
+            method.response.header.Access-Control-Allow-Methods: '''*'''
+            method.response.header.Access-Control-Allow-Origin: '''*'''
+          responseTemplates:
+            application/json: |
+              {}
+    options:
+      summary: CORS support
+      description: |
+        Enable CORS by returning correct headers
+      responses:
+        200:
+          description: Default response for CORS method
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+          content: {}
+      x-amazon-apigateway-integration:
+        type: mock
+        requestTemplates:
+          application/json: |
+            {
+              "statusCode" : 200
+            }
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Headers: '''Content-Type,X-Amz-Date,Authorization,X-Api-Key'''
+              method.response.header.Access-Control-Allow-Methods: '''*'''
+              method.response.header.Access-Control-Allow-Origin: '''*'''
+            responseTemplates:
+              application/json: |
+                {}
+  /beneficiaries:
+    parameters:
+      - in: query
+        schema:
+          type: string
+        name: beneficiary_id
+        description: The beneficiary id for the beneficiary whose data shall be retrieved
+      - in: query
+        schema:
+          type: string
+          format: date
+        name: start_date
+        required: false
+      - in: query
+        schema:
+          type: string
+          format: date
+        name: end_date
+        required: false
+    get:
+      summary: Retrieve the ESRD dialysis and beneficiary data with the given filters
+      security:
+        - CognitoAuthorizer: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Beneficiary'
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+        '400':
+          description: Invalid request. No results recorded.
+        '500':
+          description: Internal Server Error
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "${get_beneficiary_lambda_invoke_arn}"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+        default:
+          statusCode: "200"
+          responseParameters:
+            method.response.header.Access-Control-Allow-Headers: '''Content-Type,X-Amz-Date,Authorization,X-Api-Key'''
+            method.response.header.Access-Control-Allow-Methods: '''*'''
+            method.response.header.Access-Control-Allow-Origin: '''*'''
+          responseTemplates:
+            application/json: |
+              {}
+    options:
+      summary: CORS support
+      description: |
+        Enable CORS by returning correct headers
+      responses:
+        200:
+          description: Default response for CORS method
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+            Access-Control-Allow-Methods:
+              schema:
+                type: string
+            Access-Control-Allow-Headers:
+              schema:
+                type: string
+          content: {}
+      x-amazon-apigateway-integration:
+        type: mock
+        requestTemplates:
+          application/json: |
+            {
+              "statusCode" : 200
+            }
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Headers: '''Content-Type,X-Amz-Date,Authorization,X-Api-Key'''
+              method.response.header.Access-Control-Allow-Methods: '''*'''
+              method.response.header.Access-Control-Allow-Origin: '''*'''
+            responseTemplates:
+              application/json: |
+                {}
+components:
+  schemas:
+    Beneficiary:
+      type: object
+      required:
+        - "id"
+        - "name"
+        - "dateOfBirth"
+      properties:
+        id:
+          type: string
+        name:
+          type: object
+          required:
+            - "firstName"
+            - "lastName"
+          properties:
+            firstName:
+              type: string
+            middleName:
+              type: string
+            lastName:
+              type: string
+        dateOfBirth:
+          type: string
+          format: date
+        dateOfDeath:
+          type: string
+          format: date
+        gender:
+         type: string
+         enum: ["F", "M", "U"]
+        esrdEntitlementCode:
+          type: integer
+          enum: [0, 1, 2, 3]
+        esrdBenefitsCode:
+          type: integer
+          enum: [0, 1, 2, 3]
+        esrdDialysisType:
+          type: integer
+          enum: [0, 1, 2, 3, 4, 5]
+        address:
+          type: string
+        dialysisRecords:
+          type: array
+          items:
+            type: object
+            oneOf:
+              - $ref: '#/components/schemas/DialysisRecord'
+    DialysisRecord:
+      type: object
+      required:
+        - "id"
+        - "beneficiaryId"
+      properties:
+        id:
+          type: integer
+        beneficiaryId:
+          type: string
+        coveragePeriod:
+          type: string
+        coverageEffectiveDate:
+          type: string
+          format: datetime
+        coverageTerminationDate:
+          type: string
+          format: datetime
+        coverageSource:
+          type: string
+          enum: ["A", "B", "C", "D", "E", "F"]
+        coverageTerminationReason:
+          type: string
+          enum: ["A", "B", "C", "D", "E"]
+        dialysisEffectiveDate:
+          type: string
+          format: datetime
+        dialysisTerminationDate:
+          type: string
+          format: datetime
+        transplantEffectiveDate:
+          type: string
+          format: datetime
+        transplantTerminationDate:
+          type: string
+          format: datetime
+  securitySchemes:
+    CognitoAuthorizer:
+      type: apiKey
+      name: Authorization
+      in: header
+      x-amazon-apigateway-authtype: cognito_user_pools
+      x-amazon-apigateway-authorizer:
+        type: cognito_user_pools
+        providerARNs:
+          - "${cognito_user_pool_arn}"

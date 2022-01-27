@@ -1,0 +1,91 @@
+table {
+  border-spacing: 0;
+  border: 1px solid #ededed;
+}
+table tr:last-child td {
+  border-bottom: 0;
+}
+table th,
+table td {
+  margin: 0;
+  padding: 0.5rem;
+  border-bottom: 1px solid #ededed;
+  border-right: 1px solid #ededed;
+  position: relative;
+}
+table th:last-child,
+table td:last-child {
+  border-right: 0;
+}
+table tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+table th::before {
+  position: absolute;
+  right: 15px;
+  top: 16px;
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+}
+table th.sort-asc::before {
+  border-bottom: 5px solid #22543d;
+}
+table th.sort-desc::before {
+  border-top: 5px solid #22543d;
+}
+
+.beneficiary-dashboard-loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  height: 80vh;
+}
+
+.beneficiary-dashboard {
+  margin: 20px;
+}
+
+.App {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.badge {
+  background-color: #9ae6b4;
+  color: #22543d;
+  margin: 4px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  display: inline-block;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.beneficiary-more-info-link {
+  color: rgb(0, 81, 255);
+  cursor: pointer;
+}
+
+.beneficiary-more-info-dialog-container {
+  padding: 20px;
+}
+
+.beneficiary-more-info-dialog-title {
+  font-weight: bold;
+  font-size: large;
+}
+
+input {
+  padding: 10px;
+  margin-bottom: 20px;
+  font-size: 18px;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+  box-shadow: none;
+}

@@ -1,0 +1,276 @@
+version: 2.1
+
+orbs:
+  aws-ecr: circleci/aws-ecr@7.0.0
+  aws-cli: circleci/aws-cli@2.0.3
+  node: circleci/node@4.5.1
+
+commands:
+  # update_lambda:
+  #   parameters:
+  #     ecr_account_url:
+  #       type: env_var_name
+  #     repo:
+  #       type: string
+  #     tag:
+  #       type: string
+  #       default: $CIRCLE_SHA1
+  #     functions:
+  #       type: string
+  #       default: "get-beneficiary-data data-load cognito-authorization"
+
+  #   steps:
+  #     - aws-cli/setup
+  #     - run:
+  #         environment:
+  #           FUNCTIONS: "<<parameters.functions>>"
+  #         command: |
+  #           for fn in $FUNCTIONS; do
+  #               aws lambda update-function-code --region $AWS_REGION --function-name <<parameters.repo>>-${fn} --image-uri ${<<parameters.ecr_account_url>>}/<<parameters.repo>>:<<parameters.tag>>
+  #           done
+  update_react_app:
+    parameters:
+      env:
+        type: string
+    
+    steps:
+      - aws-cli/setup
+      - checkout
+      - run: |
+          cd ~/project/react-app
+          npm i
+          npm run build:<<parameters.env>>
+          aws s3 rm --region $AWS_REGION s3://fms-<<parameters.env>>-front-end-hosting/ --recursive
+          aws s3 sync --region $AWS_REGION build/ s3://fms-<<parameters.env>>-front-end-hosting/
+          aws cloudfront list-distributions --query "DistributionList.Items[].{Id: Id, WebsiteId: Origins.Items[0].Id}[?contains(WebsiteId, 'fms-<<parameters.env>>-front-end-hosting')] | [0].Id" --output text | xargs -I % aws cloudfront create-invalidation --paths "/*" --distribution-id %
+
+# default_config: &default_config
+#   docker:
+#     - image: hashicorp/terraform:light
+
+# terraform_init_dev: &terraform_init
+#   run:
+#     name: terraform init
+#     command: |
+#       cd terraform
+#       terraform init
+#       cd ../python_lambda/terraform
+#       terraform init
+
+# terraform_validate_dev: &terraform_validate
+#   run:
+#     name: terraform validate
+#     command: |
+#       cd terraform
+#       terraform validate .
+#       cd ../python_lambda/terraform
+#       terraform validate .
+
+# terraform_plan_dev: &terraform_plan
+#   run:
+#     name: terraform plan
+#     command: |
+#       cd terraform
+#       terraform plan -out=terraform.plan
+#       cd ../python_lambda/terraform
+#       terraform plan -out=terraform.lambdaplan
+
+jobs:
+  # validate_dev:
+  #   <<: *default_config
+  #   steps:
+  #     - checkout
+  #     - *terraform_init_dev
+  #     - *terraform_validate_dev
+
+  # plan_dev:
+  #   <<: *default_config
+  #   steps:
+  #     - checkout
+  #     - *terraform_init_dev
+  #     - *terraform_plan_dev
+
+  # test_and_lint_lambda:
+  #   docker:
+  #     - image: circleci/python:3.9
+  #       environment:
+  #         POSTGRES_DB: postgres
+  #         POSTGRES_USER: postgres
+  #         POSTGRES_PASSWORD: postgres
+  #         POSTGRES_HOSTNAME: localhost
+  #     - image: circleci/postgres:latest
+  #       environment:
+  #         POSTGRES_DB: postgres
+  #         POSTGRES_USER: postgres
+  #         POSTGRES_PASSWORD: postgres
+  #   steps:
+  #     - checkout
+  #     - run:
+  #         name: "Running tests"
+  #         command: |
+  #           cd lambda
+  #           pip install -r requirements.txt
+  #           pip install -r requirements_dev.txt
+  #           coverage run -m pytest --junit-xml=test-results/junit.xml
+  #           coverage report
+  #           coverage html
+  #     - store_test_results:
+  #         path: lambda/test-results
+  #     - store_artifacts:
+  #         name: "Storing test results"
+  #         path: lambda/test-results
+  #     - store_artifacts:
+  #         name: "Storing coverage reports"
+  #         path: lambda/html_coverage_reports
+  #     - run:
+  #         name: "Linting"
+  #         command: |
+  #           cd lambda
+  #           pylint *.py
+  #           bandit --verbose *.py && bandit --verbose tests/*.py -c bandit.yml
+
+  test_and_lint_react_app:
+    executor:
+      name: node/default
+      tag: '13.14'
+    steps:
+      - checkout
+      - node/install-packages:
+          app-dir: ~/project/react-app
+      - run:
+          command: |
+            cd react-app
+            npm run test
+            npm run lint
+
+  # deploy_lambda_dev:
+  #   executor: aws-cli/default
+  #   steps:
+  #     - update_lambda:
+  #         ecr_account_url: AWS_ECR_ACCOUNT_URL_DEV
+  #         repo: mpsm-dev
+
+  # deploy_lambda_prod:
+  #   executor: aws-cli/default
+  #   steps:
+  #     - update_lambda:
+  #         ecr_account_url: AWS_ECR_ACCOUNT_URL_PROD
+  #         repo: mpsm-prod
+
+  deploy_react_dev:
+    executor: aws-cli/default
+    steps:
+      - update_react_app:
+          env: dev
+
+  # deploy_react_prod:
+  #   executor: aws-cli/default
+  #   steps:
+  #     - update_react_app:
+  #         env: prod
+
+  # retag_and_push_image_prod:
+  #   executor: aws-ecr/default
+  #   steps:
+  #     - aws-ecr/ecr-login:
+  #         account-url: AWS_ECR_ACCOUNT_URL_DEV
+  #     - run:
+  #         command: |
+  #           docker pull "${AWS_ECR_ACCOUNT_URL_DEV}/mpsm-dev:${CIRCLE_SHA1}"
+  #           docker images
+  #           docker tag "${AWS_ECR_ACCOUNT_URL_DEV}/mpsm-dev:${CIRCLE_SHA1}" "${AWS_ECR_ACCOUNT_URL_PROD}/mpsm-prod:${CIRCLE_SHA1}"
+  #           docker images
+  #     - aws-ecr/ecr-login:
+  #         account-url: AWS_ECR_ACCOUNT_URL_PROD
+  #     - aws-ecr/push-image:
+  #         account-url: AWS_ECR_ACCOUNT_URL_PROD
+  #         repo: mpsm-prod
+  #         tag: "${CIRCLE_SHA1}"
+
+  # scan_image:
+  #   executor: aws-ecr/default
+  #   steps:
+  #     - aws-ecr/ecr-login:
+  #         account-url: AWS_ECR_ACCOUNT_URL_DEV
+  #     - run:
+  #         name: Install Trivy
+  #         command: |
+  #           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b ~/bin
+  #     - run:
+  #         name: Run Trivy
+  #         command: ~/bin/trivy image --no-progress "${AWS_ECR_ACCOUNT_URL_DEV}/mpsm-dev:${CIRCLE_SHA1}"
+
+workflows:
+  version: 2
+  # validate_plan_dev:
+  #   jobs:
+  #     - validate_dev
+  #     - plan_dev:
+  #         requires:
+  #           - validate
+
+  test_build_deploy:
+    jobs:
+      # - test_and_lint_lambda
+
+      # - aws-ecr/build-and-push-image:
+      #     name: build_and_push_image_dev
+      #     repo: mpsm-dev
+      #     tag: "${CIRCLE_SHA1}"
+      #     filters:
+      #       branches:
+      #         only:
+      #           - master
+      #     requires:
+      #       - test_and_lint_lambda
+
+      # - scan_image:
+      #     filters:
+      #       branches:
+      #         only:
+      #           - master
+      #     requires:
+      #       - build_and_push_image_dev
+
+      # - deploy_lambda_dev:
+      #     filters:
+      #       branches:
+      #         only:
+      #           - master
+      #     requires:
+      #       - scan_image
+
+      - test_and_lint_react_app
+
+      - deploy_react_dev:
+          filters:
+            branches:
+              only:
+                - master
+          requires:
+            - test_and_lint_react_app
+
+      # - production-deploy-approval:
+      #     type: approval
+      #     filters:
+      #       branches:
+      #         only:
+      #           - master
+      #     requires:
+      #       - deploy_lambda_dev
+
+      # - retag_and_push_image_prod:
+      #     requires:
+      #       - production-deploy-approval
+      #     filters:
+      #       branches:
+      #         only:
+      #           - master
+
+      # - deploy_lambda_prod:
+      #     filters:
+      #       branches:
+      #         only:
+      #           - master
+      #     requires:
+      #       - retag_and_push_image_prod

@@ -1,0 +1,24 @@
+data/
+__pycache__/
+.DS_Store
+.coverage
+html_coverage_reports/
+.venv/
+venv/
+esrd.csv
+beneficiaries.csv
+# Terraform
+local.tfvars*
+terraform.tfvars.*
+*.tfstate*
+.terraform/
+# Archives
+*.zip
+python/
+*~
+.vscode
+node_modules
+.aws/
+build/
+coverage/
+
