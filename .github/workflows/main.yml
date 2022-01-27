@@ -12,6 +12,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v1
 
+      - name: Setup Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: "12.x"
+
+      - name: Build App
+        run: cd react-app && npm run build
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -20,4 +28,4 @@ jobs:
           aws-region: us-east-1
 
       - name: Deploy static site to S3 bucket
-        run: aws s3 sync ./react-app/public/ s3://aia-frontend --delete
+        run: aws s3 sync ./react-app/build/ s3://aia-frontend --delete
