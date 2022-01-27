@@ -1,7 +1,7 @@
 terraform {
   backend "s3" {
-    bucket = "fms-api-terraform"
+    bucket = "aia-frontend"
     key    = "terraform.tfstate"
-    region = "us-east-2"
+    region = "us-east-1"
   }
 }
