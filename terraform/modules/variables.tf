@@ -1,6 +1,10 @@
-variable "environment" {}
+variable "environment" {
+  default = "dev"
+}
 
-variable "project" {}
+variable "project" {
+  default = "aia"
+}
 variable "port" {
   default = 5432
 }

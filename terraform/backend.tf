@@ -1,7 +1,7 @@
 terraform {
   backend "s3" {
-    bucket = "aia-frontend"
-    key    = "terraform.tfstate"
+    bucket = "aia-terraform-backend"
+    key    = "aia-frontend.terraform.tfstate"
     region = "us-east-1"
   }
 }

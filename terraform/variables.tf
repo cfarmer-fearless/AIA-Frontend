@@ -4,7 +4,7 @@ variable "region" {
 
 variable "project" {
   type    = string
-  default = "fms"
+  default = "aia"
 }
 
 variable "availability_zones" {
@@ -37,6 +37,6 @@ variable "ecr_image_tag" {
 }
 
 variable "create_prod_infrastructure" {
-  type = bool
+  type    = bool
   default = false
 }

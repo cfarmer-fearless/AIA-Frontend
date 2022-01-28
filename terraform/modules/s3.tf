@@ -1,6 +1,6 @@
 resource "aws_s3_bucket" "front_end_hosting" {
-  bucket = "${local.name}-front-end-hosting"
-  acl = "public-read"
+  bucket        = "${local.name}-front-end-hosting-east-2"
+  acl           = "public-read"
   force_destroy = true # When taking the environment down, delete this bucket even if its not empty
 
   # Static website hosting
@@ -21,7 +21,7 @@ resource "aws_s3_bucket_policy" "front_end_hosting_bucket_policy" {
         Effect    = "Allow"
         Principal = "*"
         Action    = "s3:GetObject"
-        Resource = ["${aws_s3_bucket.front_end_hosting.arn}/*"]
+        Resource  = ["${aws_s3_bucket.front_end_hosting.arn}/*"]
       },
     ]
   })
